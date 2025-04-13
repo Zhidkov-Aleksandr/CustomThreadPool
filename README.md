@@ -1,3 +1,6 @@
+![{4C2D35A1-4A1F-46A7-AB60-AC370CFFFE0A}](https://github.com/user-attachments/assets/3b80c89d-9061-44e1-87fc-f68eefc6d98e)
+
+
 # CustomThreadPool
 
 ## Описание проекта
