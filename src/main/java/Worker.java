@@ -1,9 +1,13 @@
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 public class Worker extends Thread {
+    private static final Logger logger = LogManager.getLogger(Worker.class);
     private final BlockingQueue<Runnable> taskQueue;
     private final long keepAliveTime;
     private final TimeUnit timeUnit;
@@ -31,22 +35,22 @@ public class Worker extends Thread {
 
     @Override
     public void run() {
-        System.out.println("[Worker] " + getName() + " started.");
+        logger.info("{} started.", getName());
         while (!isStopped) {
             try {
                 Runnable task = taskQueue.poll(keepAliveTime, timeUnit);
                 if (task != null) {
-                    System.out.println("[Worker] " + getName() + " executes " + task.toString());
+                    logger.info("{} executes {}", getName(), task);
                     task.run();
                 } else {
-                    System.out.println("[Worker] " + getName() + " idle timeout, stopping.");
+                    logger.info("{} idle timeout, stopping.", getName());
                     isStopped = true;
                 }
             } catch (InterruptedException e) {
                 isStopped = true;
-                System.out.println("[Worker] " + getName() + " interrupted.");
+                logger.warn("{} interrupted.", getName());
             }
         }
-        System.out.println("[Worker] " + getName() + " terminated.");
+        logger.info("{} terminated.", getName());
     }
 }

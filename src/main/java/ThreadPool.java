@@ -1,9 +1,13 @@
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ThreadPool implements CustomExecutor {
+    private static final Logger logger = LogManager.getLogger(ThreadPool.class);
     private final int corePoolSize;
     private final int maxPoolSize;
     private final long keepAliveTime;
@@ -42,7 +46,7 @@ public class ThreadPool implements CustomExecutor {
     public void execute(Runnable command) {
         if (isShutdown) {
             rejectedHandler.rejectedExecution(command, null);
-            System.out.println("[Pool] Task rejected due to shutdown: " + command.toString());
+            logger.warn("Task rejected due to shutdown: {}", command);
             return;
         }
 
@@ -50,18 +54,17 @@ public class ThreadPool implements CustomExecutor {
         Worker worker = workers.get(index);
         if (!worker.addTask(command)) {
             rejectedHandler.rejectedExecution(command, null);
-            System.out.println("[Pool] Task rejected due to full queue: " + command.toString());
+            logger.warn("Task rejected due to full queue: {}", command);
         } else {
-            System.out.println("[Pool] Task accepted into queue #" + index + ": " + command.toString());
+            logger.info("Task accepted into queue #{}: {}", index, command);
         }
 
-        // Проверка на необходимость создания резервных потоков
         int idleWorkers = countIdleWorkers();
         if (idleWorkers < minSpareThreads && workers.size() < maxPoolSize) {
             Worker newWorker = new Worker(threadFactory, queueSize, keepAliveTime, timeUnit);
             workers.add(newWorker);
             newWorker.start();
-            System.out.println("[Pool] Added spare worker, total workers: " + workers.size());
+            logger.info("Added spare worker, total workers: {}", workers.size());
         }
     }
 
@@ -75,7 +78,6 @@ public class ThreadPool implements CustomExecutor {
 
     @Override
     public <T> Future<T> submit(Callable<T> callable) {
-        // Заглушка для submit, требует доработки для полной поддержки Future
         FutureTask<T> future = new FutureTask<>(callable);
         execute(future);
         return future;
@@ -84,7 +86,7 @@ public class ThreadPool implements CustomExecutor {
     @Override
     public void shutdown() {
         isShutdown = true;
-        System.out.println("[Pool] Initiating shutdown...");
+        logger.info("Initiating shutdown...");
         for (Worker worker : workers) {
             worker.stopGracefully();
         }
@@ -93,7 +95,7 @@ public class ThreadPool implements CustomExecutor {
     @Override
     public void shutdownNow() {
         isShutdown = true;
-        System.out.println("[Pool] Initiating immediate shutdown...");
+        logger.info("Initiating immediate shutdown...");
         for (Worker worker : workers) {
             worker.interrupt();
         }
